@@ -1,0 +1,97 @@
+<p>title=&quot;C# code reference in 11ty&quot;
+description=&quot;Referencing C# code in 11ty&quot;
+tags=[&quot;C#&quot;,&quot;.NET&quot;]</p>
+<pre><code class="language-csharp">// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ &amp; https://stride3d.net)
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+using System;
+using Stride.Animations;
+using Stride.Core.Mathematics;
+using Stride.Engine;
+using Stride.Input;
+
+namespace CSharpIntermediate.Code
+{
+    public class AnimationBasics : SyncScript
+    {
+        public float AnimationSpeed = 1.0f;
+        private AnimationComponent animation;
+        private PlayingAnimation latestAnimation;
+
+        public override void Start()
+        {
+            animation = Entity.Get&lt;AnimationComponent&gt;();
+
+            // Set the default animation
+            latestAnimation = animation.Play(&quot;Idle&quot;);
+        }
+
+        public override void Update()
+        {
+            int drawX = 800, drawY = 600;
+
+            StopOrResumeAnimations(drawX, drawY += 20);
+
+            AdjustAnimationSpeed(drawX, drawY += 20);
+
+            DebugText.Print(&quot;I to start playing Idle&quot;, new Int2(drawX, drawY += 20));
+            if (Input.IsKeyPressed(Keys.I))
+            {
+                latestAnimation = animation.Play(&quot;Idle&quot;);
+                latestAnimation.TimeFactor = AnimationSpeed;
+            }
+
+            DebugText.Print(&quot;R to crossfade to Run&quot;, new Int2(drawX, drawY += 20));
+            if (Input.IsKeyPressed(Keys.R))
+            {
+                latestAnimation = animation.Crossfade(&quot;Run&quot;, TimeSpan.FromSeconds(0.5));
+                latestAnimation.TimeFactor = AnimationSpeed;
+            }
+
+            // We can crossfade to a punch animation, but only if it is not already playing
+            DebugText.Print(&quot;P to crossfade to Punch and play it once&quot;, new Int2(drawX, drawY += 20));
+            if (Input.IsKeyPressed(Keys.P) &amp;&amp; !animation.IsPlaying(&quot;Punch&quot;))
+            {
+                latestAnimation = animation.Crossfade(&quot;Punch&quot;, TimeSpan.FromSeconds(0.1));
+                latestAnimation.RepeatMode = AnimationRepeatMode.PlayOnce;
+                latestAnimation.TimeFactor = AnimationSpeed;
+            }
+
+            // When the punch animation is the latest animation, but it is no longer playing, we set a new animation
+            if (latestAnimation.Name == &quot;Punch&quot; &amp;&amp; !animation.IsPlaying(&quot;Punch&quot;))
+            {
+                latestAnimation = animation.Play(&quot;Idle&quot;);
+                latestAnimation.RepeatMode = AnimationRepeatMode.LoopInfinite;
+                latestAnimation.TimeFactor = AnimationSpeed;
+            }
+        }
+
+        private void StopOrResumeAnimations(int drawX, int drawY)
+        {
+            DebugText.Print($&quot;S to pause or resume animations&quot;, new Int2(drawX, drawY));
+            if (Input.IsKeyPressed(Keys.S))
+            {
+                foreach (var playingAnimation in animation.PlayingAnimations)
+                {
+                    playingAnimation.Enabled = !playingAnimation.Enabled;
+                }
+            }
+        }
+
+        private void AdjustAnimationSpeed(int drawX, int drawY)
+        {
+            DebugText.Print($&quot;Q and E for speed {AnimationSpeed:0.0}&quot;, new Int2(drawX, drawY));
+            if (Input.IsKeyPressed(Keys.E))
+            {
+                AnimationSpeed += 0.1f;
+                latestAnimation.TimeFactor = AnimationSpeed;
+            }
+            if (Input.IsKeyPressed(Keys.Q))
+            {
+                AnimationSpeed -= 0.1f;
+                latestAnimation.TimeFactor = AnimationSpeed;
+            }
+        }
+    }
+}
+
+</code></pre>
